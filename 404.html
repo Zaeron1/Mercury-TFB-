@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mercury TFB</title>
+    <style>
+        body {
+            background-color: #0b0c10;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .mercury-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 50px auto;
+        }
+        .mercury {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #b5a642, #5e4c23);
+            border-radius: 50%;
+            position: absolute;
+            top: 100px;
+            left: 100px;
+        }
+        .messenger {
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            left: 140px;
+            animation: orbit 8s linear infinite;
+        }
+        @keyframes orbit {
+            from { transform: rotate(0deg) translateX(140px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(140px) rotate(-360deg); }
+        }
+        h1 {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>The code for my Bachelor's Thesis (TFB) is not yet published.</h1>
+
+    <div class="mercury-container">
+        <div class="mercury"></div>
+        <div class="messenger"></div>
+    </div>
+
+</body>
+</html>
