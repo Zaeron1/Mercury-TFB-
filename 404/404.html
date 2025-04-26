@@ -9,39 +9,40 @@
       color: #ffffff;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding-top: 50px;
+      padding-top: 20px;
     }
     .mercury-container {
       position: relative;
-      width: 400px;
-      height: 400px;
-      margin: 50px auto;
+      width: 600px;
+      height: 600px;
+      margin: 30px auto;
     }
     .mercury {
-      width: 150px;
-      height: 150px;
+      width: 250px;
+      height: 250px;
       position: absolute;
-      top: 125px;
-      left: 125px;
+      top: 200px; /* descend un peu */
+      left: 175px;
       background: url('mercury.png') no-repeat center center;
       background-size: contain;
     }
     .messenger {
-      width: 50px;
-      height: 50px;
+      width: 40px;
+      height: 40px;
       position: absolute;
-      top: 0;
-      left: 175px;
+      top: 100px; /* Départ au nord */
+      left: 280px;
       background: url('messenger.png') no-repeat center center;
       background-size: contain;
-      animation: orbit 10s linear infinite;
+      animation: orbit 12s linear infinite;
+      transform-origin: 20px 200px; /* Centre de rotation déplacé sous la sonde */
     }
     @keyframes orbit {
       from {
-        transform: rotate(0deg) translateX(175px) rotate(0deg);
+        transform: rotate(0deg) translateX(200px) rotate(0deg);
       }
       to {
-        transform: rotate(360deg) translateX(175px) rotate(-360deg);
+        transform: rotate(360deg) translateX(200px) rotate(-360deg);
       }
     }
     h1 {

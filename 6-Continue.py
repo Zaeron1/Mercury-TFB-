@@ -1,5 +1,4 @@
 """
-Helllloooo
 Comparaison Mer8 / Mer15 :
 – interpolation 2D (griddata) sur Pression (P) vs fraction fondue (F)
 – cartes optimales de P et de F à résidu minimal
