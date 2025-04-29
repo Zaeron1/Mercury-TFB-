@@ -53,7 +53,7 @@ def add_exp_2d(fig, symbol, filename, press_colors, dim_x, dim_y):
         # ligne colorée
         fig.add_trace(
             go.Scatter(x=coords[:, dim_x], y=coords[:, dim_y], mode="lines",
-                        line=dict(color=colour, width=2), showlegend=False))
+                        line=dict(color=colour, width=5), showlegend=False))
         # marqueurs noirs (plus grands)
         fig.add_trace(
             go.Scatter(x=coords[:, dim_x], y=coords[:, dim_y], mode="markers",
@@ -66,7 +66,7 @@ def add_exp_3d(fig, symbol, filename, press_colors):
         fig.add_trace(
             go.Scatter3d(x=coords[:, 0], y=coords[:, 1], z=coords[:, 2],
                           mode="lines+markers",
-                          line=dict(color=colour, width=3),
+                          line=dict(color=colour, width=5),
                           marker=dict(symbol=symbol, size=6, color=colour),
                           showlegend=False))
 
@@ -94,9 +94,20 @@ def add_dummy_line(fig, colour, name, is3d=False):
 # Paramètres globaux
 # ─────────────────────────────────────────────────────────────
 region_opacity = 0.6
-pressure_colors = {1.5: "blue", 3.5: "green", 5.0: "red"}
+pressure_colors = {
+    1.5: "rgb(255,165,0)",  # orange
+    3.5: "rgb(128,0,128)",  # violet
+    5.0: "rgb(0,191,255)"   # turquoise foncé
+}
 dshapes = {"Mer8": ("circle", "sphère"), "Mer15": ("diamond", "losange")}
-region_colors = ["red", "blue", "green", "orange", "purple", "brown"]
+region_colors = [
+    "rgb(255,0,0)",      # High-Mg (rouge vif)
+    "rgb(0,255,0)",      # Al-rich (vert vif)
+    "rgb(0,0,255)",      # Caloris (bleu vif)
+    "rgb(255,255,0)",    # Rach (jaune vif)
+    "rgb(255,0,255)",    # High-al NVP (magenta vif)
+    "rgb(0,255,255)"     # Low-al NVP (cyan vif)
+]
 region_names = ["high‑Mg", "Al‑rich", "Caloris", "Rach", "high‑Al NVP", "low‑Al NVP"]
 region_pixels = get_pixels(regions_array())
 
@@ -128,7 +139,7 @@ fig3d.update_layout(
         zaxis=dict(title="Al/Si", title_font=dict(size=18), tickfont=dict(size=14)),
         bgcolor="rgb(250,250,250)"
     ),
-    legend=dict(font=dict(size=14)),
+    legend=dict(font=dict(size=20)),
     margin=dict(l=30, r=30, t=80, b=30)
 )
 fig3d.write_html(os.path.join(OUTPUT_FOLDER, "cloud_3D_diagram.html"), include_plotlyjs="cdn")
@@ -154,7 +165,7 @@ fig_ca.update_layout(
     title="Ca/Si vs Mg/Si", title_font=dict(size=22),
     xaxis=dict(title="Mg/Si", title_font=dict(size=18), tickfont=dict(size=14)),
     yaxis=dict(title="Ca/Si", title_font=dict(size=18), tickfont=dict(size=14)),
-    legend=dict(font=dict(size=14))
+    legend=dict(font=dict(size=20))
 )
 fig_ca.write_html(os.path.join(OUTPUT_FOLDER, "cloud_Ca_diagram.html"), include_plotlyjs="cdn")
 
@@ -178,7 +189,7 @@ fig_al.update_layout(
     title="Al/Si vs Mg/Si", title_font=dict(size=22),
     xaxis=dict(title="Mg/Si", title_font=dict(size=18), tickfont=dict(size=14)),
     yaxis=dict(title="Al/Si", title_font=dict(size=18), tickfont=dict(size=14)),
-    legend=dict(font=dict(size=14))
+    legend=dict(font=dict(size=20))
 )
 fig_al.write_html(os.path.join(OUTPUT_FOLDER, "cloud_Al_diagram.html"), include_plotlyjs="cdn")
 
