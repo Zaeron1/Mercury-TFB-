@@ -91,7 +91,7 @@ annotations = []
 annotations.append(dict(
     x=1.0, y=0.82, xref="paper", yref="paper",
     text="Taux de fusion partielle (%)", showarrow=False,
-    font=dict(size=14, color="black"),
+    font=dict(size=20, color="black"),  # <-- augmenté ici
 ))
 
 for mer, df in datasets.items():
@@ -126,6 +126,7 @@ for mer, df in datasets.items():
                         tickvals=[0, 100],
                         ticktext=["0", "100"],
                         outlinewidth=0,
+                        tickfont=dict(size=12),  # <-- augmenté ici
                     ),
                 ),
                 name=f"{p} GPa (Mer {mer})",
@@ -138,7 +139,7 @@ for mer, df in datasets.items():
             xref="paper", yref="paper",
             text=f"{p}\u00A0GPa (Mer{mer})", textangle=-90,
             showarrow=False,
-            font=dict(size=11, color="dimgray"),
+            font=dict(size=18, color="dimgray"),  # <-- augmenté ici
         ))
 
         curve, Fcurve = compute_curve(sub)
@@ -164,7 +165,7 @@ for mer, df in datasets.items():
 # Layout with black grid and borders
 # ============================================================
 fig.update_layout(
-    title="Tendances expérimentales – Diagramme ternaire (Mg/Si – Ca/Si – Al/Si)",
+    title="Ternaire des tendances de compositions expérimentales (Mer8 et Mer15)<br>en corrélation avec le taux de fusion partielle",
     ternary=dict(
         sum=100,
         aaxis=dict(title="Mg/Si (%)", linecolor="black", gridcolor="black"),
@@ -174,11 +175,25 @@ fig.update_layout(
     ),
     legend=dict(x=0.01, y=0.98, bgcolor="rgba(255,255,255,0.7)"),
     margin=dict(l=30, r=90, t=110, b=30),
-    annotations=annotations,
+    annotations=annotations + [
+        dict(
+            text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende (ci-dessus) pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
+            x=0,
+            y=0.6,
+            showarrow=False,
+            align='left',
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='white',
+            font=dict(size=14),
+            xref='paper',
+            yref='paper'
+        )
+    ]
 )
 
 fig.show()
 
 OUTPUT_FOLDER = "interactive_diagrams"
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)  # Crée le dossier s'il n'existe pas
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 fig.write_html(os.path.join(OUTPUT_FOLDER, "FP_ternary_diagram.html"), include_plotlyjs='cdn')

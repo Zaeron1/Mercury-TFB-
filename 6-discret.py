@@ -27,7 +27,7 @@ plt.rcParams.update({
     "font.size": 14,          # taille de base du texte
     "axes.titlesize": 18,     # titres des sous-graphiques
     "axes.labelsize": 16,     # libellés des axes
-    "legend.fontsize": 14,    # légendes
+    "legend.fontsize": 20,    # légendes
     "xtick.labelsize": 12,    # graduations X
     "ytick.labelsize": 12,    # graduations Y
     "figure.titlesize": 20,   # titres de figure au niveau supérieur
@@ -117,8 +117,12 @@ def plot_interp(results: Dict[str, dict], data: Dict[str, pd.DataFrame], ratios:
 
 def plot_map(results: Dict[str, dict], key: str, title: str, cmap: str = "viridis", unit: str = ""):
     fig, ax = plt.subplots(2, 1, figsize=(8, 6))
-    vmin = min(np.nanmin(results["8"][key]), np.nanmin(results["15"][key]))
-    vmax = max(np.nanmax(results["8"][key]), np.nanmax(results["15"][key]))
+    if key == "F_map":
+        vmin = 0
+        vmax = 60
+    else:
+        vmin = min(np.nanmin(results["8"][key]), np.nanmin(results["15"][key]))
+        vmax = max(np.nanmax(results["8"][key]), np.nanmax(results["15"][key]))
 
     for a, k in zip(ax, results):
         im = a.imshow(results[k][key], origin="upper", vmin=vmin, vmax=vmax, cmap=cmap)
@@ -190,7 +194,7 @@ def plot_region_counts(results):
     – Chaque barre est normalisée par le nombre total de pixels valides de la région.
     """
 
-    names = ["high-Mg", "Al-rich", "Caloris", "Rach", "high-al NVP"]
+    names = ["High-Mg", "Al-rich", "Caloris", "Rach", "High-al NVP"]
     ps = np.unique(np.concatenate([results["8"]["pressures"], results["15"]["pressures"]]))
     ga = lasagne.regions_array()
     cmap = plt.cm.get_cmap("tab20", len(names))
@@ -271,12 +275,12 @@ def analyze_regions(results: Dict[str, dict]):
     # Préparation des données --------------------------------------------------
     ga = lasagne.regions_array()
     region_names = [
-        "high-Mg",
+        "High-Mg",
         "Al-rich",
         "Caloris",
         "Rach",
-        "high-al NVP",
-        "low-al NVP",
+        "High-al NVP",
+        "Low-al NVP",
     ]
     ratios = {"Mg/Si": 0, "Ca/Si": 1, "Al/Si": 2}
     colors = plt.cm.get_cmap("tab10", len(region_names))

@@ -108,7 +108,7 @@ region_colors = [
     "rgb(255,0,255)",    # High-al NVP (magenta vif)
     "rgb(0,255,255)"     # Low-al NVP (cyan vif)
 ]
-region_names = ["high‑Mg", "Al‑rich", "Caloris", "Rach", "high‑Al NVP", "low‑Al NVP"]
+region_names = ["High‑Mg", "Al‑rich", "Caloris", "Rach", "High‑Al NVP", "Low‑Al NVP"]
 region_pixels = get_pixels(regions_array())
 
 # ─────────────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ for p, c in pressure_colors.items():
     add_dummy_line(fig3d, c, f"{p} GPa", is3d=True)
 
 fig3d.update_layout(
-    title="Mer8 / Mer15 + pixels régionaux (3D)",
+    title="Évolution de la composition pour les différentes régions de Mercure, en superposition des chemins de fusion partielle expérimentale sous différentes pressions.",
     title_font=dict(size=22),
     scene=dict(
         xaxis=dict(title="Mg/Si", title_font=dict(size=18), tickfont=dict(size=14)),
@@ -140,7 +140,22 @@ fig3d.update_layout(
         bgcolor="rgb(250,250,250)"
     ),
     legend=dict(font=dict(size=20)),
-    margin=dict(l=30, r=30, t=80, b=30)
+    margin=dict(l=30, r=30, t=80, b=30),
+    annotations=[
+        dict(
+            text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
+            x=1,
+            y=1,
+            showarrow=False,
+            align='left',
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='white',
+            font=dict(size=14),
+            xref='paper',
+            yref='paper'
+        )
+    ]
 )
 fig3d.write_html(os.path.join(OUTPUT_FOLDER, "cloud_3D_diagram.html"), include_plotlyjs="cdn")
 
@@ -162,10 +177,26 @@ for p, c in pressure_colors.items():
     add_dummy_line(fig_ca, c, f"{p} GPa")
 
 fig_ca.update_layout(
-    title="Ca/Si vs Mg/Si", title_font=dict(size=22),
+    title="Évolution du rapport Ca/Si en fonction de Mg/Si pour les différentes régions de Mercure,<br>en superposition des chemins de fusion partielle expérimentale sous différentes pressions.",
+    title_font=dict(size=22),
     xaxis=dict(title="Mg/Si", title_font=dict(size=18), tickfont=dict(size=14)),
     yaxis=dict(title="Ca/Si", title_font=dict(size=18), tickfont=dict(size=14)),
-    legend=dict(font=dict(size=20))
+    legend=dict(font=dict(size=20)),
+    annotations=[
+        dict(
+            text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
+            x=2,
+            y=1,
+            showarrow=False,
+            align='left',
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='white',
+            font=dict(size=14),
+            xref='paper',
+            yref='paper'
+        )
+    ]
 )
 fig_ca.write_html(os.path.join(OUTPUT_FOLDER, "cloud_Ca_diagram.html"), include_plotlyjs="cdn")
 
@@ -186,10 +217,26 @@ for p, c in pressure_colors.items():
     add_dummy_line(fig_al, c, f"{p} GPa")
 
 fig_al.update_layout(
-    title="Al/Si vs Mg/Si", title_font=dict(size=22),
+    title="Évolution du rapport Al/Si en fonction de Mg/Si pour les différentes régions de Mercure,<br>en superposition des chemins de fusion partielle expérimentale sous différentes pressions.",
+    title_font=dict(size=22),
     xaxis=dict(title="Mg/Si", title_font=dict(size=18), tickfont=dict(size=14)),
     yaxis=dict(title="Al/Si", title_font=dict(size=18), tickfont=dict(size=14)),
-    legend=dict(font=dict(size=20))
+    legend=dict(font=dict(size=20)),
+    annotations=[
+        dict(
+            text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
+            x=2,
+            y=1,
+            showarrow=False,
+            align='left',
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='white',
+            font=dict(size=14),
+            xref='paper',
+            yref='paper'
+        )
+    ]
 )
 fig_al.write_html(os.path.join(OUTPUT_FOLDER, "cloud_Al_diagram.html"), include_plotlyjs="cdn")
 

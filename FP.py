@@ -58,26 +58,25 @@ cmap = {
     ("15", 5.0): "RdPu",
 }
 marker_shape = {"8": "circle", "15": "diamond"}
-# Barres : positions, taille
 bar_positions = {("8", 1.5): 0.75, ("8", 3.5): 0.80, ("8", 5.0): 0.85,
                  ("15", 1.5): 0.90, ("15", 3.5): 0.95, ("15", 5.0): 1.00}
 bar_thickness = 12
-bar_length = 0.50
+bar_length = 0.5
 
 # Annotations verticales et titre des colorbars
 annotations = []
-# Titre général au-dessus des barres de couleur
+# Titre général au-dessus des barres de couleur (taille augmentée ici)
 annotations.append(dict(
-    x=1, y=0.82, xref="paper", yref="paper",
+    x=0.96, y=0.82, xref="paper", yref="paper",
     text="Taux de fusion partielle (%)", showarrow=False,
-    font=dict(size=14, color="black")
+    font=dict(size=20, color="black")  # <-- augmenté ici
 ))
 # Légendes Mer/pression
 for (mer, p), xpos in bar_positions.items():
     annotations.append(dict(
         x=xpos, y=0.60, xref="paper", yref="paper",
         text=f"{p} GPa (Mer{mer})", textangle=-90,
-        showarrow=False, font=dict(size=11, color="dimgray")
+        showarrow=False, font=dict(size=18, color="dimgray")  # <-- augmenté ici
     ))
 
 # ============================================================
@@ -91,7 +90,6 @@ for mer, df in datasets.items():
             continue
         pts = sub[["Mg/Si", "Ca/Si", "Al/Si"]].values
         Fvals = sub["F"].values
-        # points expérimentaux
         fig.add_trace(go.Scatter3d(
             x=pts[:, 0], y=pts[:, 1], z=pts[:, 2], mode="markers",
             marker=dict(symbol=marker_shape[mer], size=7, opacity=0.8,
@@ -99,14 +97,12 @@ for mer, df in datasets.items():
                         color=Fvals, colorscale=cmap[(mer, p)], cmin=0, cmax=100),
             name=f"{p} GPa (Mer{8})", legendgroup=f"M{mer}P{p}"
         ))
-        # courbe lissée
         curve, Fcurve = compute_curve(sub)
         fig.add_trace(go.Scatter3d(
             x=curve[:,0], y=curve[:,1], z=curve[:,2], mode="lines",
-            line=dict(width=4, color=Fcurve, colorscale=cmap[(mer, p)], cmin=0, cmax=100),
+            line=dict(width=12, color=Fcurve, colorscale=cmap[(mer, p)], cmin=0, cmax=100),
             showlegend=False, legendgroup=f"M{mer}P{p}"
         ))
-        # barre de couleur
         fig.add_trace(go.Scatter3d(
             x=[None], y=[None], z=[None], mode="markers",
             marker=dict(colorscale=cmap[(mer, p)], cmin=0, cmax=100,
@@ -114,19 +110,38 @@ for mer, df in datasets.items():
                         colorbar=dict(len=bar_length, thickness=bar_thickness,
                                       y=0.5, x=bar_positions[(mer, p)],
                                       tickmode='array', tickvals=[0,100], ticktext=['0','100'],
-                                      tickfont=dict(size=10), outlinewidth=0)),
+                                      tickfont=dict(size=12),  # <-- augmenté ici
+                                      outlinewidth=0)),
             showlegend=False
         ))
 # Layout
 fig.update_layout(
-    title="Tendances expérimentales (Mer 8 & 15)",
-    scene=dict(xaxis_title="Mg/Si", yaxis_title="Ca/Si", zaxis_title="Al/Si",
-               bgcolor="rgb(250,250,250)"),
+    title="Tendances dans les compositions expérimentales (Mer8 et Mer15)<br>en corrélation avec le taux fusion partielle",
+    scene=dict(
+        xaxis_title="Mg/Si",
+        yaxis_title="Ca/Si",
+        zaxis_title="Al/Si",
+        bgcolor="rgb(250,250,250)"
+    ),
     legend=dict(x=0.01, y=0.99, bgcolor="rgba(255,255,255,0.7)", borderwidth=0),
     margin=dict(l=30, r=100, t=100, b=30),
-    annotations=annotations
+    annotations=annotations + [
+        dict(
+            text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
+            x=1,
+            y=0.1,
+            showarrow=False,
+            align='left',
+            bordercolor='black',
+            borderwidth=1,
+            bgcolor='white',
+            font=dict(size=14),
+            xref='paper',
+            yref='paper'
+        )
+    ]
 )
 fig.show()
 OUTPUT_FOLDER = "interactive_diagrams"
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)  # Crée le dossier s'il n'existe pas
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 fig.write_html(os.path.join(OUTPUT_FOLDER, "FP.html"), include_plotlyjs='cdn')
