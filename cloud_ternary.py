@@ -162,8 +162,8 @@ fig1.update_layout(
     annotations=[
         dict(
             text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
-            x=0.96,
-            y=0.5,
+            x=1.2,
+            y=0.1,
             showarrow=False,
             align='left',
             bordercolor='black',
@@ -218,8 +218,8 @@ fig2.update_layout(
     annotations=[
         dict(
             text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
-            x=0.96,
-            y=0.5,
+            x=1.22,
+            y=0.1,
             showarrow=False,
             align='left',
             bordercolor='black',

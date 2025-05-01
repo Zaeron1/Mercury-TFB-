@@ -139,7 +139,7 @@ for mer, df in datasets.items():
             xref="paper", yref="paper",
             text=f"{p}\u00A0GPa (Mer{mer})", textangle=-90,
             showarrow=False,
-            font=dict(size=18, color="dimgray"),  # <-- augmenté ici
+            font=dict(size=13, color="dimgray"),  # <-- augmenté ici
         ))
 
         curve, Fcurve = compute_curve(sub)
@@ -177,9 +177,9 @@ fig.update_layout(
     margin=dict(l=30, r=90, t=110, b=30),
     annotations=annotations + [
         dict(
-            text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende (ci-dessus) pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
+            text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende<br>(ci-dessus) pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
             x=0,
-            y=0.6,
+            y=0.3,
             showarrow=False,
             align='left',
             bordercolor='black',

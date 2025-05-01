@@ -128,8 +128,8 @@ fig.update_layout(
     annotations=annotations + [
         dict(
             text="<b>📌 Astuce :</b><br>Cliquez sur un élément de la légende pour le masquer.<br>Sélectionnez pour zoomer.<br>Double-clic pour dézoomer.",
-            x=1,
-            y=0.1,
+            x=1.08,
+            y=0,
             showarrow=False,
             align='left',
             bordercolor='black',
