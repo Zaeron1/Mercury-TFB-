@@ -1,5 +1,5 @@
 """
-Mercury Geochemical Analysis – Full End‑to‑End Pipeline
+Mercury Geochemical Analysis
 ======================================================
 Author: Alexandre Michaux (University de Liège) – 2025
 
@@ -27,6 +27,7 @@ Pipeline overview
    - 2‑D maps of optimal pressure and melt fraction (colour‑bar shared);
    - histograms and bar charts summarising residuals and region counts;
    - regional zoom comparing observed vs. modelled ratios with R² tables.
+   - interactive 3D maps of optimal melt fraction and pressure
 """
 
 
@@ -412,80 +413,70 @@ def analyze_regions(results: Dict[str, dict]):
     
 
 
-
-
 def plot_globe_map(results: Dict[str, dict], key: str, title: str, unit: str = "", colormap: str = "Viridis"):
-    """
-    Generates and saves interactive 3D globes (Mer8 and Mer15) with:
-    – valid data in color,
-    – missing data (NaN) in opaque black,
-    – hemisphere without data also filled black.
-    Output HTML saved in 'interactive_diagrams'.
-    """
     os.makedirs("interactive_diagrams", exist_ok=True)
+
+    # Pour F_map, on limite la colorbar
+    is_fusion = (key == "F_map")
+    cmin_val = 0 if is_fusion else None
+    cmax_val = 60 if is_fusion else None
 
     for mission in ["8", "15"]:
         data = results[mission][key]
         Ny, Nx = data.shape
 
-        # Latitude grid: northern + fake southern hemisphere
-        lat_north = np.linspace(90, 0, Ny)
-        lat_south = np.linspace(0, -90, Ny)
-        lat = np.concatenate([lat_north, lat_south])
+        # grilles lat/lon (nord + sud fictif)
+        lat_n = np.linspace(90, 0, Ny)
+        lat_s = np.linspace(0, -90, Ny)
+        lat = np.concatenate([lat_n, lat_s])
         lon = np.linspace(-180, 180, Nx)
         lon_grid, lat_grid = np.meshgrid(lon, lat)
 
-        # Spherical to Cartesian
-        R = 1.0
-        theta = np.radians(90 - lat_grid)
-        phi = np.radians(lon_grid)
-        x = R * np.sin(theta) * np.cos(phi)
-        y = R * np.sin(theta) * np.sin(phi)
-        z = R * np.cos(theta)
-
-        # Build full data map: top half = real, bottom half = NaN
-        data_full = np.full((2 * Ny, Nx), np.nan)
+        # matrice pleine : nord = données, sud = NaN
+        data_full = np.full((2*Ny, Nx), np.nan)
         data_full[:Ny, :] = data
 
-        # Identify valid / missing
-        valid_mask = ~np.isnan(data_full)
-        missing_mask = np.isnan(data_full)
+        # conversion sphérique → cartésien
+        theta = np.radians(90 - lat_grid)
+        phi   = np.radians(lon_grid)
+        R = 1.0
+        x_s = R * np.sin(theta) * np.cos(phi)
+        y_s = R * np.sin(theta) * np.sin(phi)
+        z_s = R * np.cos(theta)
 
-        x_valid, y_valid, z_valid = x[valid_mask], y[valid_mask], z[valid_mask]
-        val_valid = data_full[valid_mask]
-
-        x_missing, y_missing, z_missing = x[missing_mask], y[missing_mask], z[missing_mask]
+        valid = ~np.isnan(data_full)
+        x_v = x_s[valid];  y_v = y_s[valid];  z_v = z_s[valid]
+        val = data_full[valid]
 
         fig = go.Figure()
 
-        # Plot valid points (color scale)
-        fig.add_trace(go.Scatter3d(
-            x=x_valid, y=y_valid, z=z_valid,
-            mode="markers",
-            marker=dict(
-                size=2.5,
-                color=val_valid,
-                colorscale=colormap,
-                colorbar=dict(title=f"{title} {unit}"),
-                showscale=True,
-                opacity=1.0,
-            ),
-            name=f"Mer{mission}",
-            hoverinfo="skip"
+        # 1) base sphère noire
+        fig.add_trace(go.Surface(
+            x=x_s, y=y_s, z=z_s,
+            surfacecolor=np.zeros_like(z_s),
+            colorscale=[[0,"black"],[1,"black"]],
+            showscale=False,
+            hoverinfo="skip",
         ))
 
-        # Plot invalid/missing points in **opaque black**
+        # 2) points valides colorés
+        marker_cfg = dict(
+            size=2.5,
+            color=val,
+            colorscale=colormap,
+            showscale=True,
+            opacity=1.0,
+            colorbar=dict(title=f"{title} {unit}")
+        )
+        if cmin_val is not None: marker_cfg["cmin"] = cmin_val
+        if cmax_val is not None: marker_cfg["cmax"] = cmax_val
+
         fig.add_trace(go.Scatter3d(
-            x=x_missing, y=y_missing, z=z_missing,
+            x=x_v, y=y_v, z=z_v,
             mode="markers",
-            marker=dict(
-                size=2.5,
-                color="black",
-                opacity=1.0,
-            ),
-            name="Zone sans données",
+            marker=marker_cfg,
+            name=f"Mer{mission}",
             hoverinfo="skip",
-            showlegend=False
         ))
 
         fig.update_layout(
@@ -500,12 +491,12 @@ def plot_globe_map(results: Dict[str, dict], key: str, title: str, unit: str = "
             margin=dict(l=0, r=0, t=60, b=0),
         )
 
-        # Save to HTML
-        safe_key = "pression" if "press" in key else "fusion"
-        filename = f"globe_{safe_key}_Mer{mission}.html"
-        filepath = os.path.join("interactive_diagrams", filename)
-        fig.write_html(filepath, include_plotlyjs="cdn")
-        print(f"✔️ Globe Mer{mission} enregistré : {filepath}")
+        # sauvegarde
+        suffix = "fusion" if is_fusion else "pression"
+        fname = f"globe_{suffix}_Mer{mission}.html"
+        path = os.path.join("interactive_diagrams", fname)
+        fig.write_html(path, include_plotlyjs="cdn")
+        print(f"✔️ Globe Mer{mission} enregistré : {path}")
 
 # ===========================================================================
 # 3. MAIN EXECUTION BLOCK – run everything & generate figures

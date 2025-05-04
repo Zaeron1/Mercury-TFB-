@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 This script performs cubic interpolation of temperature (Temp) as a function 
 of degree of melting (F, in %) and pressure (in GPa) for two datasets: Mer8 and Mer15.
