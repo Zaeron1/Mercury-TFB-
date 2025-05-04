@@ -480,7 +480,7 @@ def plot_globe_map(results: Dict[str, dict], key: str, title: str, unit: str = "
         ))
 
         fig.update_layout(
-            title=f"Carte sphérique – {title.lower()} pour Mer{mission}",
+            title=f"Globe – {title.upper()} pour Mer{mission}",
             scene=dict(
                 xaxis=dict(showticklabels=False, visible=False),
                 yaxis=dict(showticklabels=False, visible=False),
