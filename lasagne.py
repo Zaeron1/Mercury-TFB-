@@ -1,56 +1,55 @@
+"""
+This script processes four BMP images representing Mg/Si, Ca/Si, Al/Si ratios and region masks 
+on Mercury’s surface. It keeps only the northern hemisphere, applies scaling factors, 
+computes new ratio maps (Ca/Mg, Al/Mg, Ca/Al), and extracts pixel values for each predefined region.
+
+The final output is a 2D NumPy array of shape (6, 7), where:
+  • First dimension = 6 different chemical ratios:
+        0: Mg/Si
+        1: Ca/Si
+        2: Al/Si
+        3: Ca/Mg
+        4: Al/Mg
+        5: Ca/Al
+  • Second dimension = 7 region types:
+        0–5 = masked regions (in order): ["High-Mg", "Al-rich", "Caloris", "Rach", "High-al NVP", "Low-al NVP"]
+        6    = full map (no masking)
+
+Each element of the array is a 2D array (image) of the selected ratio, masked for the corresponding region.
+"""
+
 from PIL import Image
 import numpy as np
 import os
 
-
 def regions_array():
     """
-    Charge 4 images (3 images de rapports et 1 image de masquage des régions),
-    conserve uniquement la moitié supérieure (hémisphère nord) des cartes,
-    applique une mise à l'échelle, remplace les 0 par NaN, calcule plusieurs
-    rapports, et retourne un unique array 2D (6 x 7) de type object.
-
-    Première dimension (x) : 6 rapports dans l'ordre suivant :
-        0 : mg_si
-        1 : ca_si
-        2 : al_si
-        3 : ca_mg (rapport Ca/Mg)
-        4 : al_mg (rapport Al/Mg)
-        5 : ca_al (rapport Ca/Al)
-
-    Deuxième dimension (y) : 7 ensembles de données :
-        0 à 5 : régions masquées selon la carte des régions (dans l'ordre) :
-                ["high-Mg", "Al-rich", "Caloris", "Rach", "high-al NVP", "low-al NVP"]
-        6     : carte complète (sans masque) pour le rapport considéré.
-
-    Chaque élément giant_array[x, y] est un tableau 2D (dimensions = moitié
-    supérieure de l'image) contenant les valeurs du rapport correspondant pour
-    les pixels de la zone considérée.
+    Loads 3 ratio maps and 1 region mask map, all in BMP format,
+    and returns a structured array (6, 7) containing masked pixel values 
+    for each ratio and region (plus full maps).
     """
 
-    # Noms des fichiers et correspondance des variables
-    file_names   = ['mgsi.bmp', 'casi.bmp', 'alsi.bmp', 'regions.bmp']
-    variables    = ['mg_si', 'ca_si', 'al_si', 'regions']
+    # List of image file names and matching variable names
+    file_names = ['mgsi.bmp', 'casi.bmp', 'alsi.bmp', 'regions.bmp']
+    variables = ['mg_si', 'ca_si', 'al_si', 'regions']
     region_values = (1, 2, 3, 4, 5, 6)
-    region_names  = ["high-Mg", "Al-rich", "Caloris", "Rach", "high-al NVP", "low-al NVP"]
+    region_names = ["high-Mg", "Al-rich", "Caloris", "Rach", "high-al NVP", "low-al NVP"]
 
-
-    # Dossier où sont stockés les données
+    # Folder containing the .bmp files
     DATA_FOLDER = "data"
 
-
-    # Chargement des images en ajoutant "data/" devant les noms de fichiers
+    # Load all images as grayscale arrays
     images = {var: Image.open(os.path.join(DATA_FOLDER, file)) for var, file in zip(variables, file_names)}
 
-    # Création du masque des régions et découpe de la moitié supérieure
+    # Extract the region mask and crop to northern hemisphere (upper half)
     regions_mask_full = np.array(images['regions'], dtype=float)
-    half_height = regions_mask_full.shape[0] // 2  # hauteur / 2
+    half_height = regions_mask_full.shape[0] // 2
     regions_mask = regions_mask_full[:half_height, :]
 
-    # Facteurs d'échelle pour convertir en valeurs réelles
+    # Scaling factors (from original data to real values)
     scale_factors = {'mg_si': 0.860023, 'ca_si': 0.318000, 'al_si': 0.402477}
 
-    # Conversion en tableaux NumPy, mise à l'échelle, découpe et remplacement de 0 par NaN
+    # Convert, scale, crop and replace 0 with NaN
     arr = {}
     for k in scale_factors:
         data_full = np.array(images[k], dtype=float)
@@ -58,60 +57,65 @@ def regions_array():
         data[data == 0] = np.nan
         arr[k] = data
 
-    # Création d'un masque commun pour les pixels valides dans Mg, Ca et Al
+    # Only keep pixels valid in all 3 source maps
     valid_mask = ~np.isnan(arr['mg_si']) & ~np.isnan(arr['ca_si']) & ~np.isnan(arr['al_si'])
     for k in arr:
         arr[k] = np.where(valid_mask, arr[k], np.nan)
 
-    # Calcul des rapports supplémentaires
+    # Compute extra chemical ratios
     arr['ca_mg'] = arr['ca_si'] / arr['mg_si']
     arr['al_mg'] = arr['al_si'] / arr['mg_si']
     arr['ca_al'] = arr['ca_si'] / arr['al_si']
 
-    # Empilement des 6 couches en un tableau 3D (hauteur x largeur x 6)
+    # Define the order of channels
     channels_order = ['mg_si', 'ca_si', 'al_si', 'ca_mg', 'al_mg', 'ca_al']
+
+    # Stack into one 3D array: (height, width, 6)
     combined = np.stack([arr[ch] for ch in channels_order], axis=-1)
 
-    # Extraction des régions masquées selon la carte des régions
+    # Masked regions
     region_matrices = {}
     for r, name in zip(region_values, region_names):
         r_mask = (regions_mask == r) & valid_mask
         region_matrices[name] = np.where(r_mask[..., None], combined, np.nan)
 
-    # Création des cartes complètes (sans masque) pour chaque canal
+    # Full maps without masking
     for i, ch in enumerate(channels_order):
         region_matrices["full_" + ch] = combined[..., i]
 
-    # Création du "giant array" final de dimensions (6, 7)
-    num_channels = len(channels_order)       # 6
-    num_regions  = len(region_names) + 1     # 6 régions + 1 (complete)
+    # Final array: shape (6, 7)
+    num_channels = len(channels_order)
+    num_regions = len(region_names) + 1  # +1 for full maps
     giant_array = np.empty((num_channels, num_regions), dtype=object)
 
-    # Remplissage pour chaque rapport et pour chaque région
     for i, ch in enumerate(channels_order):
-        # Pour chaque région masquée
+        # Fill masked regions
         for j, rname in enumerate(region_names):
             giant_array[i, j] = region_matrices[rname][..., i]
-        # Pour la carte complète, on utilise la clé "full_" + ch
+        # Fill full map
         giant_array[i, num_regions - 1] = region_matrices["full_" + ch]
 
     return giant_array
 
 
+# ─────────────────────────────────────────────────────────────
+# EXAMPLE USAGE: Previewing a full map
+# ─────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    # Récupération du giant array (moitié supérieure uniquement)
+    # Load the array (only upper hemisphere)
     lasagne = regions_array()
 
-    # Affichage des dimensions
-    print("lasagne array shape:", lasagne.shape)
+    # Show array structure
+    print("lasagne array shape:", lasagne.shape)  # Should be (6, 7)
 
-    # Exemple : carte complète du rapport Ca/Mg (indice 3, colonne 6)
-    full_ca_mg = lasagne[3, 6]
+    # Example: show the full (non-masked) Ca/Mg ratio map
+    full_ca_mg = lasagne[3, 6]  # Index 3 = Ca/Mg, column 6 = full map
     print("Shape de la carte complète Ca/Mg (moitié supérieure):", full_ca_mg.shape)
 
-    # Visualisation
+    # Display it
     plt.figure(figsize=(10, 8))
     plt.imshow(full_ca_mg, cmap='viridis')
     plt.colorbar(label='Ca/Mg Ratio')
