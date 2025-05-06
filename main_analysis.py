@@ -480,16 +480,31 @@ def plot_globe_map(results: Dict[str, dict], key: str, title: str, unit: str = "
         ))
 
         fig.update_layout(
-            title=f"Globe – {title.upper()} pour Mer{mission}",
-            scene=dict(
-                xaxis=dict(showticklabels=False, visible=False),
-                yaxis=dict(showticklabels=False, visible=False),
-                zaxis=dict(showticklabels=False, visible=False),
-                aspectmode="data",
-                bgcolor="white"
-            ),
-            margin=dict(l=0, r=0, t=60, b=0),
+    title=f"Globe – {title.upper()} pour Mer{mission}",
+    scene=dict(
+        xaxis=dict(showticklabels=False, visible=False),
+        yaxis=dict(showticklabels=False, visible=False),
+        zaxis=dict(showticklabels=False, visible=False),
+        aspectmode="data",
+        bgcolor="white"
+    ),
+    margin=dict(l=0, r=0, t=60, b=0),
+    annotations=[
+        dict(
+            text="● Données inexistantes ou non valides",
+            showarrow=False,
+            xref="paper",
+            yref="paper",
+            x=0.01,
+            y=0.01,
+            font=dict(size=14, color="black"),
+            bgcolor="white",
+            bordercolor="black",
+            borderwidth=1,
+            borderpad=4
         )
+    ]
+)
 
         # sauvegarde
         suffix = "fusion" if is_fusion else "pression"
