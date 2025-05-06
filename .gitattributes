@@ -1,3 +1,2 @@
-# Traite les TIFF et les HTML avec Git LFS, désactive la conversion CRLF
+# Traite les TIFF et avec Git LFS, désactive la conversion CRLF
 *.tif   filter=lfs diff=lfs merge=lfs -text
-*.html filter=lfs diff=lfs merge=lfs -text
