@@ -42,6 +42,7 @@ import plotly.graph_objects as go
 from tqdm import tqdm
 
 import lasagne  # Local module for accessing global planetary data
+NORTH_ONLY = True          # Show only the northern hemisphere in maps
 
 # ---------------------------------------------------------------------------
 # Global Matplotlib style: slightly larger fonts for thesis figures

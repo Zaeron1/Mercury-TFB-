@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from tqdm import tqdm
 import lasagne  # Local module for accessing global planetary data
+NORTH_ONLY = True     
 from scipy.interpolate import griddata
 import os
 

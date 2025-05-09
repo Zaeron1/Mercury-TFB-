@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from lasagne import regions_array # Local module for accessing global planetary data
-
+NORTH_ONLY = True     
 # ───────────────────────────────
 # Directory setup
 # ───────────────────────────────

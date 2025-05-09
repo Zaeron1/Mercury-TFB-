@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from lasagne import regions_array  # Custom function that returns a (3, 6, N) array for 6 Mercury regions
-
+NORTH_ONLY = True     
 # ─────────────────────────────────────────────────────────────
 # Input/output directories
 # ─────────────────────────────────────────────────────────────

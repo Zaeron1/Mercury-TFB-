@@ -1,125 +1,243 @@
+#!/usr/bin/env python3
 """
-This script processes four BMP images representing Mg/Si, Ca/Si, Al/Si ratios and region masks 
-on Mercury’s surface. It keeps only the northern hemisphere, applies scaling factors, 
-computes new ratio maps (Ca/Mg, Al/Mg, Ca/Al), and extracts pixel values for each predefined region.
+mercury_maps.py – Load elemental abundance maps (Mg/Si, Ca/Si, Al/Si) of Mercury,
+build derived ratios and plot either the whole planet or only the northern
+hemisphere.
 
-The final output is a 2D NumPy array of shape (6, 7), where:
-  • First dimension = 6 different chemical ratios:
-        0: Mg/Si
-        1: Ca/Si
-        2: Al/Si
-        3: Ca/Mg
-        4: Al/Mg
-        5: Ca/Al
-  • Second dimension = 7 region types:
-        0–5 = masked regions (in order): ["High-Mg", "Al-rich", "Caloris", "Rach", "High-al NVP", "Low-al NVP"]
-        6    = full map (no masking)
+Changelog (May 2025) ---------------------------------------------------------
+* **show_borders** – overlay region outlines in solid black.
+* **border_thick** – outline thickness.
+* **auto-titles & colour-bar** – `plot_ratio_map()` now sets the figure title and
+  colour-bar label automatically from *ratio* and *north_only*.
 
-Each element of the array is a 2D array (image) of the selected ratio, masked for the corresponding region.
+Quick example ::
+    >>> from mercury_maps import regions_array, plot_ratio_map
+    >>> cube = regions_array(north_only=True)
+    >>> mg_si = cube[0, 6]              # Mg/Si ratio, global slice
+    >>> plot_ratio_map(mg_si, ratio="Mg/Si", north_only=True)
 """
 
-from PIL import Image
-import numpy as np
+
+
+from __future__ import annotations
 import os
+from typing import Dict, Tuple
 
-def regions_array():
+import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+
+plt.rcParams.update({
+    "font.size": 14,      # base font size
+    "axes.titlesize": 18, # subplot titles
+    "axes.labelsize": 12, # axis labels
+    "legend.fontsize": 20,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "figure.titlesize": 20,  # top‑level figure title
+})
+
+# ----------------------------------------------------------------------------
+# CONSTANTS & SETTINGS
+# ----------------------------------------------------------------------------
+DATA_FOLDER: str = "data"
+FILE_NAMES: Tuple[str, ...] = ("mgsi.bmp", "casi.bmp", "alsi.bmp", "regions.bmp")
+VARIABLES: Tuple[str, ...] = ("mg_si", "ca_si", "al_si", "regions")
+REGION_VALUES: Tuple[int, ...] = (1, 2, 3, 4, 5, 6)
+REGION_NAMES: Tuple[str, ...] = (
+    "high-Mg",
+    "Al-rich",
+    "Caloris",
+    "Rach",
+    "high-Al NVP",
+    "low-Al NVP",
+)
+SCALE_FACTORS: Dict[str, float] = {
+    "mg_si": 0.860023,
+    "ca_si": 0.318000,
+    "al_si": 0.402477,
+}
+CHANNELS_ORDER: Tuple[str, ...] = (
+    "mg_si",
+    "ca_si",
+    "al_si",
+    "ca_mg",
+    "al_mg",
+    "ca_al",
+)
+
+# Map channel index → pretty ratio label (for auto-title)
+CHANNEL_LABELS: Tuple[str, ...] = (
+    "Mg/Si", "Ca/Si", "Al/Si", "Ca/Mg", "Al/Mg", "Ca/Al"
+)
+
+# ----------------------------------------------------------------------------
+# CORE UTILITIES
+# ----------------------------------------------------------------------------
+
+def _load_raw_images() -> Dict[str, Image.Image]:
+    missing = [f for f in FILE_NAMES if not os.path.exists(os.path.join(DATA_FOLDER, f))]
+    if missing:
+        raise FileNotFoundError(f"Missing image files in '{DATA_FOLDER}': {', '.join(missing)}")
+    return {var: Image.open(os.path.join(DATA_FOLDER, f)).convert("L") for var, f in zip(VARIABLES, FILE_NAMES)}
+
+
+def _slice_rows(arr: np.ndarray, north_only: bool) -> np.ndarray:
+    return arr[: arr.shape[0] // 2] if north_only else arr
+
+
+def _degree_per_pixel(mat: np.ndarray, north_only: bool) -> Tuple[float, float]:
+    h, w = mat.shape
+    return 360.0 / w, (90.0 if north_only else 180.0) / h
+
+
+def _region_boundaries(mask: np.ndarray) -> np.ndarray:
+    b = np.zeros_like(mask, bool)
+    b[:-1, :] |= mask[:-1, :] != mask[1:, :]
+    b[:, :-1] |= mask[:, :-1] != mask[:, 1:]
+    return b
+
+
+def _dilate(mask: np.ndarray, iters: int = 1) -> np.ndarray:
+    m = mask.copy()
+    for _ in range(iters):
+        up    = np.pad(m[1:, : ], ((0,1),(0,0)), constant_values=False)
+        down  = np.pad(m[:-1, :], ((1,0),(0,0)), constant_values=False)
+        left  = np.pad(m[:, 1: ], ((0,0),(0,1)), constant_values=False)
+        right = np.pad(m[:, :-1], ((0,0),(1,0)), constant_values=False)
+        m |= up | down | left | right
+    return m
+
+# ----------------------------------------------------------------------------
+# PUBLIC API
+# ----------------------------------------------------------------------------
+
+def regions_array(north_only: bool = True) -> np.ndarray:
+    imgs = _load_raw_images()
+    reg_mask_full = np.asarray(imgs["regions"], float)
+    reg_mask = _slice_rows(reg_mask_full, north_only)
+
+    data: Dict[str, np.ndarray] = {}
+    for var in ("mg_si", "ca_si", "al_si"):
+        full = np.asarray(imgs[var], float)
+        sub = _slice_rows(full, north_only) * (SCALE_FACTORS[var] / 255.0)
+        sub[sub == 0] = np.nan
+        data[var] = sub
+
+    valid = ~(np.isnan(data["mg_si"]) | np.isnan(data["ca_si"]) | np.isnan(data["al_si"]))
+    for v in data:
+        data[v] = np.where(valid, data[v], np.nan)
+
+    data["ca_mg"] = data["ca_si"] / data["mg_si"]
+    data["al_mg"] = data["al_si"] / data["mg_si"]
+    data["ca_al"] = data["ca_si"] / data["al_si"]
+
+    cube = np.stack([data[ch] for ch in CHANNELS_ORDER], axis=-1)
+
+    mats: Dict[str, np.ndarray] = {}
+    for val, name in zip(REGION_VALUES, REGION_NAMES):
+        mask = (reg_mask == val) & valid
+        mats[name] = np.where(mask[..., None], cube, np.nan)
+    for i, ch in enumerate(CHANNELS_ORDER):
+        mats[f"full_{ch}"] = cube[..., i]
+
+    out = np.empty((len(CHANNELS_ORDER), len(REGION_NAMES) + 1), dtype=object)
+    for i, ch in enumerate(CHANNELS_ORDER):
+        for j, r in enumerate(REGION_NAMES):
+            out[i, j] = mats[r][..., i]
+        out[i, -1] = mats[f"full_{ch}"]
+    return out
+
+
+def plot_ratio_map(
+    matrix: np.ndarray,
+    *,
+    ratio: str | None = None,
+    north_only: bool = True,
+    title: str | None = None,
+    cmap: str = "jet",
+    show_borders: bool = False,
+    border_thick: int = 1,
+    cbar_pad: float = 0.6,
+    show: bool = True,
+    save_path: str | None = None,
+) -> None:
+    """Display *matrix* with automatic title and colour-bar label.
+
+    Parameters
+    ----------
+    ratio : str | None
+        Label of the ratio (e.g. "Ca/Mg"). If *None*, defaults to "Ratio".
+    north_only : bool
+        True → northern hemisphere; False → global map.
+    title : str | None
+        Custom title. If *None*, auto-generated from *ratio* and *north_only*.
     """
-    Loads 3 ratio maps and 1 region mask map, all in BMP format,
-    and returns a structured array (6, 7) containing masked pixel values 
-    for each ratio and region (plus full maps).
-    """
 
-    # List of image file names and matching variable names
-    file_names = ['mgsi.bmp', 'casi.bmp', 'alsi.bmp', 'regions.bmp']
-    variables = ['mg_si', 'ca_si', 'al_si', 'regions']
-    region_values = (1, 2, 3, 4, 5, 6)
-    region_names = ["high-Mg", "Al-rich", "Caloris", "Rach", "high-al NVP", "low-al NVP"]
+    if matrix.ndim != 2:
+        raise ValueError("`matrix` must be 2-D")
 
-    # Folder containing the .bmp files
-    DATA_FOLDER = "data"
+    ratio = ratio or "Ratio"
+    if title is None:
+        title = f""
+    # Figure size ---------------------------------------------------------
+    dx, dy = _degree_per_pixel(matrix, north_only)
+    fig_w = 10.0
+    fig_h = fig_w * (dy / dx)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
 
-    # Load all images as grayscale arrays
-    images = {var: Image.open(os.path.join(DATA_FOLDER, file)) for var, file in zip(variables, file_names)}
+    extent = [-180, 180, 0, 90] if north_only else [-180, 180, -90, 90]
+    ax.imshow(matrix, cmap=cmap, extent=extent, origin="upper", interpolation="nearest")
 
-    # Extract the region mask and crop to northern hemisphere (upper half)
-    regions_mask_full = np.array(images['regions'], dtype=float)
-    half_height = regions_mask_full.shape[0] // 2
-    regions_mask = regions_mask_full[:half_height, :]
+    # Region outlines -----------------------------------------------------
+    if show_borders:
+        reg_slice = _slice_rows(np.asarray(_load_raw_images()["regions"], float), north_only)
+        borders = _region_boundaries(reg_slice)
+        if border_thick > 1:
+            borders = _dilate(borders, border_thick - 1)
+        ax.imshow(np.ma.masked_where(~borders, borders),
+                  cmap="gray_r", vmin=0, vmax=1, alpha=1.0,
+                  extent=extent, origin="upper", interpolation="nearest")
 
-    # Scaling factors (from original data to real values)
-    scale_factors = {'mg_si': 0.860023, 'ca_si': 0.318000, 'al_si': 0.402477}
+    # Axis formatting -----------------------------------------------------
+    ax.set_title(title)
+    ax.set_xlabel("Longitude (°)")
+    ax.set_ylabel("Latitude (°)")
+    ax.set_xticks(np.linspace(-180, 180, 9))
+    ax.set_yticks(np.linspace(0, 90, 4) if north_only else np.linspace(-90, 90, 7))
+    ax.grid(True, linestyle="--", alpha=0.5)
 
-    # Convert, scale, crop and replace 0 with NaN
-    arr = {}
-    for k in scale_factors:
-        data_full = np.array(images[k], dtype=float)
-        data = data_full[:half_height, :] * (scale_factors[k] / 255.0)
-        data[data == 0] = np.nan
-        arr[k] = data
+    # Colour-bar ----------------------------------------------------------
+    div = make_axes_locatable(ax)
+    cax = div.append_axes("bottom", size="5%", pad=cbar_pad)
+    cb = fig.colorbar(ax.images[0], cax=cax, orientation="horizontal")
+    cb.set_label(ratio)
 
-    # Only keep pixels valid in all 3 source maps
-    valid_mask = ~np.isnan(arr['mg_si']) & ~np.isnan(arr['ca_si']) & ~np.isnan(arr['al_si'])
-    for k in arr:
-        arr[k] = np.where(valid_mask, arr[k], np.nan)
-
-    # Compute extra chemical ratios
-    arr['ca_mg'] = arr['ca_si'] / arr['mg_si']
-    arr['al_mg'] = arr['al_si'] / arr['mg_si']
-    arr['ca_al'] = arr['ca_si'] / arr['al_si']
-
-    # Define the order of channels
-    channels_order = ['mg_si', 'ca_si', 'al_si', 'ca_mg', 'al_mg', 'ca_al']
-
-    # Stack into one 3D array: (height, width, 6)
-    combined = np.stack([arr[ch] for ch in channels_order], axis=-1)
-
-    # Masked regions
-    region_matrices = {}
-    for r, name in zip(region_values, region_names):
-        r_mask = (regions_mask == r) & valid_mask
-        region_matrices[name] = np.where(r_mask[..., None], combined, np.nan)
-
-    # Full maps without masking
-    for i, ch in enumerate(channels_order):
-        region_matrices["full_" + ch] = combined[..., i]
-
-    # Final array: shape (6, 7)
-    num_channels = len(channels_order)
-    num_regions = len(region_names) + 1  # +1 for full maps
-    giant_array = np.empty((num_channels, num_regions), dtype=object)
-
-    for i, ch in enumerate(channels_order):
-        # Fill masked regions
-        for j, rname in enumerate(region_names):
-            giant_array[i, j] = region_matrices[rname][..., i]
-        # Fill full map
-        giant_array[i, num_regions - 1] = region_matrices["full_" + ch]
-
-    return giant_array
+    plt.tight_layout()
+    if save_path:
+        fig.savefig(save_path, dpi=300)
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
 
 
-# ─────────────────────────────────────────────────────────────
-# EXAMPLE USAGE: Previewing a full map
-# ─────────────────────────────────────────────────────────────
+# ----------------------------------------------------------------------------
+# Quick test -----------------------------------------------------------------
+# ----------------------------------------------------------------------------
+if __name__ == "__main__":
+    SHOW_NORTH_ONLY = False
+    SHOW_BORDERS   = True
+    BORDER_THICK   = 2
+    CHANNEL_IDX    = 2     # 0=Mg/Si, 1=Ca/Si, 2=Al/Si, ...
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
+    cube = regions_array(north_only=SHOW_NORTH_ONLY)
+    mat = cube[CHANNEL_IDX, 6]
 
-    # Load the array (only upper hemisphere)
-    lasagne = regions_array()
-
-    # Show array structure
-    print("lasagne array shape:", lasagne.shape)  # Should be (6, 7)
-
-    # Example: show the full (non-masked) Ca/Mg ratio map
-    full_ca_mg = lasagne[3, 6]  # Index 3 = Ca/Mg, column 6 = full map
-    print("Shape de la carte complète Ca/Mg (moitié supérieure):", full_ca_mg.shape)
-
-    # Display it
-    plt.figure(figsize=(10, 8))
-    plt.imshow(full_ca_mg, cmap='viridis')
-    plt.colorbar(label='Ca/Mg Ratio')
-    plt.title('Carte complète du rapport Ca/Mg (moitié supérieure)')
-    plt.xlabel('Longitude')
-    plt.ylabel('Latitude')
-    plt.show()
+    plot_ratio_map(mat,
+                   ratio=CHANNEL_LABELS[CHANNEL_IDX],
+                   north_only=SHOW_NORTH_ONLY,
+                   show_borders=SHOW_BORDERS,
+                   border_thick=BORDER_THICK)
