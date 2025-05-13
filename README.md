@@ -26,6 +26,7 @@ The `.bmp` files contain elemental ratio maps (Mg/Si, Ca/Si, Al/Si) extracted fr
 The `.csv` files contain the results of partial melting experiments at different pressures (Mer8, Mer15 compositions) but **are not given here** (unpublished data).
 
 data/
+
 ├── data_Mer8.csv    # Experimental data for Mer8 composition (unpublished)
 
 ├── data_Mer15.csv   # Experimental data for Mer15 composition (unpublished)
