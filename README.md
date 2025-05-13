@@ -27,11 +27,17 @@ The `.csv` files contain the results of partial melting experiments at different
 
 data/
 ├── data_Mer8.csv    # Experimental data for Mer8 composition (unpublished)
+
 ├── data_Mer15.csv   # Experimental data for Mer15 composition (unpublished)
+
 ├── mgsi.bmp         # Mg/Si ratio map from MESSENGER
+
 ├── casi.bmp         # Ca/Si ratio map from MESSENGER
+
 ├── alsi.bmp         # Al/Si ratio map from MESSENGER
+
 ├── regions.bmp      # Region classification mask
+
 ├── DEM.tif          # Digital Elevation Model
 
 ## 👨‍🔬 Author
