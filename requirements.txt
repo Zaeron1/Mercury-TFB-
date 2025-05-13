@@ -1,8 +1,8 @@
 numpy
 pandas
-matplotlib
-plotly
-scipy
-Pillow
-tqdm
 scikit-learn
+scipy
+plotly
+matplotlib
+tqdm
+Pillow
