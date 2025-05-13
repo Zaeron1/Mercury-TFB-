@@ -22,7 +22,8 @@ Confer requirements.txt
 ## 📥 Data
 
 The `.bmp` files contain elemental ratio maps (Mg/Si, Ca/Si, Al/Si) extracted from MESSENGER observations. **Available on the following article** -> https://doi.org/10.1016/j.icarus.2020.113716
-The `.csv` files contain the results of partial melting experiments at different pressures (Mer8, Mer15 compositions) **are not given here**.
+
+The `.csv` files contain the results of partial melting experiments at different pressures (Mer8, Mer15 compositions) **are not given here** (unpublished data).
 
 ## 👨‍🔬 Author
 
